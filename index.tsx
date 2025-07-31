@@ -93,7 +93,7 @@ const api = {
     return response.json();
   },
   submitTest: async (test_id: number, answers: { [key: number]: string }): Promise<TestSubmissionResponse> => {
-    const student_id = localStorage.getItem('student_id') || `user_${crypto.randomUUID()}`;
+    const student_id = localStorage.getItem('student_id') || `user_${generateUUID()}`;
     localStorage.setItem('student_id', student_id);
     const response = await fetch(`${API_BASE_URL}/api/site/submit-test/`, {
       method: 'POST',
@@ -584,10 +584,24 @@ Be encouraging and constructive. Return all information only in Karakalpak langu
     );
 };
 
+
+function generateUUID() {
+    if (window.crypto && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+
+    // Fallback UUID generator
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
 const App = () => {
     useEffect(() => {
         if (!localStorage.getItem('student_id')) {
-            localStorage.setItem('student_id', `user_${crypto.randomUUID()}`);
+            localStorage.setItem('student_id', `user_${generateUUID()}`);
         }
     }, []);
 
