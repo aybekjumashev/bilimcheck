@@ -218,7 +218,7 @@ const SubjectSelectionPage = () => {
                             <h3 className="text-2xl font-bold mb-4">{subject.name}</h3>
                             {isAnyGradeAvailable ? (
                                 <div>
-                                    <p className="text-sm text-gray-400 mb-3">Klasslar:</p>
+                                    <p className="text-sm text-gray-400 mb-3">Klasıńızdı saylań:</p>
                                     <div className="flex flex-wrap gap-2">
                                         {subject.grades.map(gradeInfo => (
                                             <button key={gradeInfo.id}
