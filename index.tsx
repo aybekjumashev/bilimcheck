@@ -135,10 +135,10 @@ const Header = () => (
 const LandingPage = () => (
     <div className="text-center py-20 px-6">
         <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4">
-            Bilimińizdi sınap kóriń &<br />Temalardı <span className="text-brand-accent">jasalma intellekt</span> penen ózlestiriń
+            Bilimińizdi sınań hám<br /> <span className="text-brand-accent">Jasalma intellekt</span> penen ázzi táreplerińizdi anıqlań
         </h1>
         <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-8">
-            Pándi saylań, online testten ótiń hám intellektual oqıw assistenti tárepinen qáliplestirilgen óz betinshe oqıw jobasın alıń
+            Qálegen pánińizdi saylap, qısqa testten ótiń hám jasalma intellekt dúzip bergen jeke oqıw rejesi menen bilimińizdi toltırıń
         </p>
         <Link to="/tests" className="bg-brand-accent text-white font-bold py-3 px-8 rounded-full text-lg hover:opacity-90 transition-transform transform hover:scale-105 inline-block">
             Testti Baslaw
@@ -148,7 +148,7 @@ const LandingPage = () => (
             <div className="bg-brand-primary p-6 rounded-xl border border-brand-secondary transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-accent">
                 <div className="text-brand-accent text-3xl mb-3">1</div>
                 <h3 className="text-xl font-bold mb-2">Pán Saylaw</h3>
-                <p className="text-gray-400">Keń kólemli pánler hám klasslardı saylań</p>
+                <p className="text-gray-400">Pánler hám klasslar arasınan ózińizge kereklisin saylań</p>
             </div>
             <div className="bg-brand-primary p-6 rounded-xl border border-brand-secondary transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-accent">
                 <div className="text-brand-accent text-3xl mb-3">2</div>
@@ -157,8 +157,8 @@ const LandingPage = () => (
             </div>
             <div className="bg-brand-primary p-6 rounded-xl border border-brand-secondary transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-accent">
                 <div className="text-brand-accent text-3xl mb-3">3</div>
-                <h3 className="text-xl font-bold mb-2">Oqıw Jobasın Alıw</h3>
-                <p className="text-gray-400">Ózińizdiń ázzi jerlerińizge itibar qaratıw ushın tolıq oqıw jobasın alıń</p>
+                <h3 className="text-xl font-bold mb-2">Nátiyje hám Reje</h3>
+                <p className="text-gray-400">Jasalma intellekt siz ushın arnawlı oqıw jobasın dúzedi. Endi ne oqıwdı anıq bilesiz!</p>
             </div>
         </div>
     </div>
