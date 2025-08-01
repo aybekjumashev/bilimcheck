@@ -194,7 +194,8 @@ const SubjectSelectionPage = () => {
         setIsCreatingTest(true);
         try {
             const testData = await api.createTest(selectedGrade.id);
-            navigate(`/test/${testData.test_id}`, { state: { questions: testData.questions } });
+            const subjectFullName = `${selectedSubject} ${selectedGrade.grade}-klass`;
+            navigate(`/test/${testData.test_id}`, { state: { questions: testData.questions, subjectName: subjectFullName } });
         } catch (err) {
             setError("Failed to create the test. Please try again.");
             setIsCreatingTest(false);
@@ -257,7 +258,8 @@ const TestPage = () => {
     const { testId } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
-    const { questions } = location.state as { questions: TestQuestion[] } || {};
+    const { questions, subjectName } = location.state as { questions: TestQuestion[], subjectName: string } || {};
+    
 
     const [currentQIndex, setCurrentQIndex] = useState(0);
     const [answers, setAnswers] = useState<{ [key: number]: string }>({});
@@ -300,6 +302,8 @@ const TestPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-2xl">
+            <h1 className="text-3xl font-bold mb-6 text-center">{subjectName || 'Test'}</h1>
+            
             <div className="bg-brand-primary p-8 rounded-2xl shadow-2xl border border-brand-secondary">
                 <div className="mb-6">
                     <div className="flex justify-between items-center mb-2">
@@ -370,7 +374,7 @@ const ResultPage = () => {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
             
             const incorrectQuestionsText = incorrectQuestions.map(q => 
-              `- Question: "${q.question_text}"\n  - Your Answer: "${q.options[q.user_answer]}"\n  - Correct Answer: "${q.options[q.correct_answer]}"`
+              `- Question: "${q.question_text}"\n  - User Answer: "${q.options[q.user_answer]}"\n  - Correct Answer: "${q.options[q.correct_answer]}"`
             ).join('\n');
 
             const prompt = `
@@ -385,7 +389,7 @@ ${'Topics: ' + subject_detail.topics || ''}
 ${incorrectQuestionsText}
 
 Based on these incorrect answers, identify key topics to study. For each topic explanation of the core concept.
-Be encouraging and constructive. Return all information only in Karakalpak language.
+Be encouraging and constructive. Return all information only in Karakalpak language (if the subject is related to the language, only in the language of that subject).
             `;
 
             const responseSchema = {
@@ -393,17 +397,17 @@ Be encouraging and constructive. Return all information only in Karakalpak langu
                 properties: {
                     topics: {
                         type: Type.ARRAY,
-                        description: "A list of key topics the student needs to study, in Karakalpak language.",
+                        description: "A list of key topics the student needs to study.",
                         items: {
                             type: Type.OBJECT,
                             properties: {
                                 name: {
                                     type: Type.STRING,
-                                    description: "The name of the topic to study."
+                                    description: "Name of the topic being studied in the Karakalpak language or, if the subject is related to the language (English or Russian), only in the language of that subject."
                                 },
                                 desc: {
                                     type: Type.STRING,
-                                    description: "Explanation of the core concept of the topic."
+                                    description: "Explanation of the core concept of the topic, in Karakalpak language."
                                 }
                             },
                             required: ["name", "desc"]
@@ -434,29 +438,24 @@ Be encouraging and constructive. Return all information only in Karakalpak langu
     };
 
 
-    // --- PDF YARATISH UCHUN YANGI FUNKSIYA ---
     const handleDownloadPdf = async () => {
         if (!studyPlan) return;
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
     
         try {
-            // 1. Shrift faylini 'public' papkasidan o'qib olamiz
             const fontResponse = await fetch('/DejaVuSans.ttf');
             const fontBuffer = await fontResponse.arrayBuffer();
             
-            // 2. Faylni Base64 formatiga o'tkazamiz
             const fontBase64 = btoa(
                 new Uint8Array(fontBuffer)
                     .reduce((data, byte) => data + String.fromCharCode(byte), '')
             );
 
-            // 3. Shriftni jsPDF virtual fayl tizimiga qo'shamiz
             doc.addFileToVFS('DejaVuSans.ttf', fontBase64);
             doc.addFont('DejaVuSans.ttf', 'DejaVuSans', 'normal');
-            doc.setFont('DejaVuSans'); // Hujjat uchun standart shriftni o'rnatamiz
+            doc.setFont('DejaVuSans'); 
 
-            // --- PDF Kontentini chizish ---
             const margin = 15;
             const pageWidth = doc.internal.pageSize.getWidth();
             const usableWidth = pageWidth - 2 * margin;
@@ -464,14 +463,13 @@ Be encouraging and constructive. Return all information only in Karakalpak langu
         
             doc.setFontSize(18);
             doc.text(`Oqıw rejesi: ${subject_detail.name} ${subject_detail.grade}-klass`, margin, y);
-            y += 10;
+            y += 20;
         
             studyPlan.topics.forEach((topic, index) => {
-                // Agar joy qolmasa, yangi betga o'tish
                 if (y > doc.internal.pageSize.getHeight() - 30) {
                     doc.addPage();
                     y = margin;
-                    doc.setFont('DejaVuSans'); // Yangi betda ham shriftni o'rnatish
+                    doc.setFont('DejaVuSans'); 
                 }
         
                 doc.setFontSize(14);
