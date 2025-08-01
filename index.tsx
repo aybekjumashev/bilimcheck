@@ -253,7 +253,6 @@ const SubjectSelectionPage = () => {
     );
 };
 
-
 const TestPage = () => {
     const { testId } = useParams();
     const location = useLocation();
@@ -275,7 +274,7 @@ const TestPage = () => {
     if (!questions || questions.length === 0) return <LoadingSpinner />;
 
     const currentQuestion = questions[currentQIndex];
-    const progress = ((currentQIndex + 1) / questions.length) * 100;
+    const progress = ((Object.keys(answers).length) / questions.length) * 100; // Progress based on answered questions
     
     const handleSelectOption = (questionId: number, optionKey: string) => {
         setAnswers(prev => ({ ...prev, [questionId]: optionKey }));
@@ -302,19 +301,41 @@ const TestPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-2xl">
-            <h1 className="text-3xl font-bold mb-6 text-center">{subjectName || 'Test'}</h1>
+            <h1 className="text-3xl font-bold mb-4 text-center">{subjectName || 'Test'}</h1>
             
-            <div className="bg-brand-primary p-8 rounded-2xl shadow-2xl border border-brand-secondary">
-                <div className="mb-6">
-                    <div className="flex justify-between items-center mb-2">
-                         <p className="text-sm text-gray-400">Soraw {currentQIndex + 1} / {questions.length}</p>
-                         <p className="text-sm font-semibold text-brand-accent">{Object.keys(answers).length} / {questions.length} Juwap Berildi</p>
-                    </div>
-                    <div className="w-full bg-brand-secondary rounded-full h-2.5">
-                        <div className="bg-brand-accent h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
-                    </div>
-                </div>
+            {/* --- START: SORAW NAVIGACIYA PANELI --- */}
+            <div className="mb-6 bg-brand-primary/50 p-4 rounded-xl border border-brand-secondary">
+                <div className="flex flex-wrap justify-center gap-2">
+                    {questions.map((q, index) => {
+                        const isActive = currentQIndex === index;
+                        const isAnswered = answers.hasOwnProperty(q.id);
+                        
+                        let buttonClass = 'w-8 h-8 rounded-md flex items-center justify-center font-semibold transition-all duration-200 text-sm focus:outline-none';
 
+                        if (isActive) {
+                            buttonClass += ' bg-brand-accent text-white ring-2 ring-offset-2 ring-offset-gray-900 ring-brand-accent scale-110';
+                        } else if (isAnswered) {
+                            buttonClass += ' bg-green-500/40 text-gray-100 hover:bg-green-500/60';
+                        } else {
+                            buttonClass += ' bg-brand-secondary text-gray-400 hover:bg-brand-secondary/70';
+                        }
+
+                        return (
+                            <button
+                                key={q.id}
+                                onClick={() => setCurrentQIndex(index)}
+                                className={buttonClass}
+                                aria-label={`Soraw ${index + 1} ge ótiw`}
+                            >
+                                {index + 1}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+            {/* --- END: SORAW NAVIGACIYA PANELI --- */}
+
+            <div className="bg-brand-primary p-8 rounded-2xl shadow-2xl border border-brand-secondary">
                 <div>
                     <h2 className="text-2xl font-semibold mb-6 min-h-[96px]">{currentQuestion.question_text}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -334,7 +355,7 @@ const TestPage = () => {
                     </button>
                     {currentQIndex === questions.length - 1 ? (
                         <button onClick={handleSubmit} disabled={isSubmitting || Object.keys(answers).length !== questions.length} className="py-2 px-6 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isSubmitting ? 'Juwmaqlaw...' : 'Juwmalaw'}
+                            {isSubmitting ? 'Juwmaqlaw...' : 'Juwmaqlaw'}
                         </button>
                     ) : (
                         <button onClick={() => setCurrentQIndex(i => Math.min(questions.length-1, i+1))} disabled={currentQIndex === questions.length-1} className="py-2 px-4 bg-brand-accent text-white rounded-lg disabled:opacity-50">Keyingi</button>
@@ -345,6 +366,8 @@ const TestPage = () => {
         </div>
     );
 };
+
+
 const ResultPage = () => {
     const { testId } = useParams();
     const location = useLocation();
