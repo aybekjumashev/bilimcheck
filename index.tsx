@@ -149,7 +149,7 @@ const Header = () => (
     <header className="bg-brand-primary/80 backdrop-blur-sm shadow-md sticky top-0 z-50">
         <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
             <Link to="/" className="text-xl font-bold text-white hover:text-brand-accent transition-colors flex items-center gap-2">
-                <img src="/logo.png" alt="logo" className="w-7 h-7" />
+                <img src="./logo.png" alt="logo" className="w-7 h-7" />
                 <span className="md:text-2xl text-base">BilimCheck</span>
             </Link>
             <div className="flex items-center gap-1">
