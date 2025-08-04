@@ -148,14 +148,15 @@ const LoadingSpinner = () => (
 const Header = () => (
     <header className="bg-brand-primary/80 backdrop-blur-sm shadow-md sticky top-0 z-50">
         <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-            <Link to="/" className="text-xl font-bold text-white hover:text-brand-accent transition-colors">
-                BilimCheck
+            <Link to="/" className="text-xl font-bold text-white hover:text-brand-accent transition-colors flex items-center gap-2">
+                <img src="/logo.png" alt="logo" className="w-7 h-7" />
+                <span className="md:text-2xl text-base">BilimCheck</span>
             </Link>
             <div className="flex items-center gap-1">
-                <Link to="/results" className="text-gray-400 text-center py-2 px-4 rounded-lg hover:bg-brand-secondary transition-colors">
+                <Link to="/results" className="text-gray-400 text-center py-1 px-3 rounded-lg hover:bg-brand-secondary transition-colors">
                     Nátiyjeler
                 </Link>
-                <Link to="/tests" className="bg-brand-accent text-white text-center font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">
+                <Link to="/tests" className="bg-brand-accent text-white text-center font-semibold py-1 px-3 rounded-lg hover:opacity-90 transition-opacity">
                     Testler
                 </Link>
             </div>
