@@ -494,14 +494,14 @@ const ResultsListPage = () => {
                             {results.map((result) => (
                                 <tr key={result.id} className="border-t border-brand-secondary hover:bg-brand-secondary/20 transition-colors">
                                     <td className="p-4">
-                                        <div>{result.student_name}</div>
-                                        <div className="text-gray-400 text-xs">{result.test_name}</div>
-                                    </td>
-                                    <td className="p-4 font-mono text-right">
-                                        <div>
-                                            <span className="text-brand-accent font-bold">{result.score_percentage.toFixed(1)}%</span>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div>{result.student_name}</div>
+                                            <div className="text-brand-accent font-bold">{result.score_percentage.toFixed(1)}%</div>
                                         </div>
-                                        <div className="text-gray-400 text-xs">{result.completed_at}</div>
+                                        <div className="flex items-center justify-between text-gray-400 mt-1 text-xs">
+                                            <div>{result.test_name}</div>
+                                            <div>{result.completed_at}</div>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -513,13 +513,17 @@ const ResultsListPage = () => {
             {pagination && pagination.total_pages > 1 && (
                 <div className="flex justify-between items-center mt-8">
                     <button onClick={() => handlePageChange(currentPage - 1)} disabled={!pagination.has_previous} className="py-2 px-4 bg-brand-secondary rounded-lg disabled:opacity-50 hover:bg-brand-secondary/70 transition">
-                        Aldınǵı
+                        <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m15 19-7-7 7-7"/>
+                        </svg>
                     </button>
                     <span className="text-gray-400">
                         Bet {pagination.current_page} / {pagination.total_pages}
                     </span>
                     <button onClick={() => handlePageChange(currentPage + 1)} disabled={!pagination.has_next} className="py-2 px-4 bg-brand-secondary rounded-lg disabled:opacity-50 hover:bg-brand-secondary/70 transition">
-                        Keyingi
+                        <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                            <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m9 5 7 7-7 7"/>
+                        </svg>
                     </button>
                 </div>
             )}
