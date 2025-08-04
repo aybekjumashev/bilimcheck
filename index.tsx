@@ -500,7 +500,6 @@ const ResultsListPage = () => {
                                     <td className="p-4 font-mono text-right">
                                         <div>
                                             <span className="text-brand-accent font-bold">{result.score_percentage.toFixed(1)}%</span>
-                                            <span className="text-gray-400 text-sm ml-2">({result.correct_answers}/{result.total_questions})</span>
                                         </div>
                                         <div className="text-gray-400 text-xs">{result.completed_at}</div>
                                     </td>
