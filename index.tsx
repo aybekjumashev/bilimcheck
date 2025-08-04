@@ -151,12 +151,12 @@ const Header = () => (
             <Link to="/" className="text-xl font-bold text-white hover:text-brand-accent transition-colors">
                 BilimCheck
             </Link>
-            <div className="flex items-center gap-4">
-                <Link to="/results" className="text-white font-semibold py-2 px-4 rounded-lg hover:bg-brand-secondary transition-colors">
+            <div className="flex items-center gap-2">
+                <Link to="/results" className="text-gray-400 text-center py-2 px-4 rounded-lg hover:bg-brand-secondary transition-colors">
                     Nátiyjeler
                 </Link>
-                <Link to="/tests" className="bg-brand-accent text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">
-                    Testti Baslaw
+                <Link to="/tests" className="bg-brand-accent text-white text-center font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">
+                    Test
                 </Link>
             </div>
         </nav>
