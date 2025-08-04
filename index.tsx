@@ -106,8 +106,8 @@ const api = {
     if (!response.ok) throw new Error("Failed to fetch subjects");
     return response.json();
   },
-  getTestResults: async (page: number = 1): Promise<TestResultsResponse> => {
-    const response = await fetch(`${API_BASE_URL}/api/site/test-results/?page=${page}&page_size=15`);
+  getTestResults: async (page: number = 1, subject: string = '', student_name: string = ''): Promise<TestResultsResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/site/test-results/?page=${page}&page_size=15&subject_id=${subject}&search=${student_name}`);
     if (!response.ok) throw new Error("Failed to fetch test results");
     return response.json();
   },
@@ -151,12 +151,12 @@ const Header = () => (
             <Link to="/" className="text-xl font-bold text-white hover:text-brand-accent transition-colors">
                 BilimCheck
             </Link>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
                 <Link to="/results" className="text-gray-400 text-center py-2 px-4 rounded-lg hover:bg-brand-secondary transition-colors">
                     Nátiyjeler
                 </Link>
                 <Link to="/tests" className="bg-brand-accent text-white text-center font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">
-                    Test
+                    Testler
                 </Link>
             </div>
         </nav>
@@ -173,8 +173,11 @@ const LandingPage = () => (
         <p className="text-lg text-gray-300 max-w-2xl mx-auto mb-8">
             Qálegen pánińizdi saylap, qısqa testten ótiń hám jasalma intellekt dúzip bergen jeke oqıw rejesi menen bilimińizdi toltırıń
         </p>
-        <Link to="/tests" className="bg-brand-accent text-white font-bold py-3 px-8 rounded-full text-lg hover:opacity-90 transition-transform transform hover:scale-105 inline-block">
-            Testti Baslaw
+        <Link to="/tests" className="bg-brand-accent text-white font-bold py-3 px-8 rounded-full text-lg hover:opacity-90 transition-transform transform hover:scale-105 flex items-center justify-center gap-2 mx-auto max-w-xs">
+            <span>Testti Baslaw</span>
+            <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                <path fill-rule="evenodd" d="M20.337 3.664c.213.212.354.486.404.782.294 1.711.657 5.195-.906 6.76-1.77 1.768-8.485 5.517-10.611 6.683a.987.987 0 0 1-1.176-.173l-.882-.88-.877-.884a.988.988 0 0 1-.173-1.177c1.165-2.126 4.913-8.841 6.682-10.611 1.562-1.563 5.046-1.198 6.757-.904.296.05.57.191.782.404ZM5.407 7.576l4-.341-2.69 4.48-2.857-.334a.996.996 0 0 1-.565-1.694l2.112-2.111Zm11.357 7.02-.34 4-2.111 2.113a.996.996 0 0 1-1.69-.565l-.422-2.807 4.563-2.74Zm.84-6.21a1.99 1.99 0 1 1-3.98 0 1.99 1.99 0 0 1 3.98 0Z" clip-rule="evenodd"/>
+            </svg>
         </Link>
 
         <div className="mt-24 max-w-4xl mx-auto grid md:grid-cols-3 gap-8">
@@ -451,6 +454,75 @@ const TestPage = () => {
     );
 };
 
+
+
+const ResultsListContainer = () => {
+    const [subjects, setSubjects] = useState<GroupedSubject[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const currentPage = Number(searchParams.get('page')) || 1;
+    const subject = searchParams.get('subject') || '';
+    const studentName = searchParams.get('student_name') || '';
+
+    useEffect(() => {
+        api.getSubjects()
+            .then(data => {
+                setSubjects(Object.values(data.subjects));
+            })
+            .catch(() => setError("Could not load subjects. Please try again later."))
+            .finally(() => setLoading(false));
+    }, []);
+
+    if (loading) return <LoadingSpinner />;
+    if (error) return <div className="text-center text-red-400 mt-10">{error}</div>;
+
+    return (
+        <div className="container mx-auto px-6 py-10 max-w-3xl">
+            <h2 className="text-3xl font-bold text-center mb-10">Barlıq Nátiyjeler</h2>            
+            <div className="sm:flex justify-between items-center">
+                {/* Subjects select */}
+                <div className="relative mb-3">
+                <select
+                    className="appearance-none bg-brand-secondary text-gray-200 border border-brand-secondary rounded-lg px-4 py-2 focus:ring-brand-accent focus:border-brand-accent w-full pr-10"
+                    value={subject}
+                    onChange={(e) => setSearchParams({ subject: e.target.value, page: '1', student_name: studentName })}
+                >
+                    <option value="">Barlıq pán</option>
+                    {subjects.map(subject => (
+                    <option key={subject.name} value={subject.id}>
+                        {subject.name} {subject.grade}-klass
+                    </option>
+                    ))}
+                </select>
+
+                {/* Custom arrow */}
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </div>
+                </div>
+
+                {/* Search input */}
+                <div className="relative mb-3">
+                    <input
+                        type="text"
+                        className="bg-brand-secondary text-gray-200 border border-brand-secondary rounded-lg px-4 py-2 focus:ring-brand-accent focus:border-brand-accent w-full"
+                        placeholder="Atı-familiyası..."
+                        value={studentName}
+                        onChange={(e) => setSearchParams({ student_name: e.target.value, page: '1', subject: subject })}
+                    />
+                </div>
+            </div>
+
+            <ResultsListPage />
+        </div>
+    );
+};
+
+
+
 const ResultsListPage = () => {
     const [results, setResults] = useState<TestResultListItem[]>([]);
     const [pagination, setPagination] = useState<PaginationInfo | null>(null);
@@ -459,11 +531,13 @@ const ResultsListPage = () => {
     
     const [searchParams, setSearchParams] = useSearchParams();
     const currentPage = Number(searchParams.get('page')) || 1;
+    const subject = searchParams.get('subject') || '';
+    const studentName = searchParams.get('student_name') || '';
 
     useEffect(() => {
         setLoading(true);
         setError(null);
-        api.getTestResults(currentPage)
+        api.getTestResults(currentPage, subject, studentName)
             .then(data => {
                 setResults(data.results);
                 setPagination(data.pagination);
@@ -474,20 +548,18 @@ const ResultsListPage = () => {
             .finally(() => {
                 setLoading(false);
             });
-    }, [currentPage]);
+    }, [currentPage, subject, studentName]);
 
     const handlePageChange = (newPage: number) => {
-        setSearchParams({ page: newPage.toString() });
+        setSearchParams({ page: newPage.toString(), subject: subject, student_name: studentName });
     };
 
     if (loading) return <LoadingSpinner />;
     if (error) return <div className="text-center text-red-400 mt-10">{error}</div>;
 
     return (
-        <div className="container mx-auto px-6 py-12 max-w-3xl">
-            <h2 className="text-3xl font-bold text-center mb-10">Sońǵı Nátiyjeler</h2>
-            
-            <div className="bg-brand-primary border border-brand-secondary rounded-xl overflow-hidden shadow-lg">
+        <div className="container mx-auto max-w-3xl">
+            <div className="bg-brand-primary rounded-xl overflow-hidden shadow-lg">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left min-w-[300px]">
                         <tbody>
@@ -511,14 +583,14 @@ const ResultsListPage = () => {
             </div>
 
             {pagination && pagination.total_pages > 1 && (
-                <div className="flex justify-between items-center mt-8">
+                <div className="flex gap-4 justify-center items-center mt-8">
                     <button onClick={() => handlePageChange(currentPage - 1)} disabled={!pagination.has_previous} className="py-2 px-4 bg-brand-secondary rounded-lg disabled:opacity-50 hover:bg-brand-secondary/70 transition">
                         <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
                             <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m15 19-7-7 7-7"/>
                         </svg>
                     </button>
                     <span className="text-gray-400">
-                        Bet {pagination.current_page} / {pagination.total_pages}
+                        {pagination.current_page} / {pagination.total_pages}
                     </span>
                     <button onClick={() => handlePageChange(currentPage + 1)} disabled={!pagination.has_next} className="py-2 px-4 bg-brand-secondary rounded-lg disabled:opacity-50 hover:bg-brand-secondary/70 transition">
                         <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
@@ -799,7 +871,7 @@ const App = () => {
                         <Route path="/tests" element={<SubjectSelectionPage />} />
                         <Route path="/test/:testId" element={<TestPage />} />
                         <Route path="/result/:testId" element={<ResultPage />} />
-                        <Route path="/results" element={<ResultsListPage />} />
+                        <Route path="/results" element={<ResultsListContainer />} />
                     </Routes>
                 </main>
                 <footer className="backdrop-blur-sm py-4">
