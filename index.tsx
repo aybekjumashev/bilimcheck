@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { HashRouter, Routes, Route, Link, useNavigate, useParams, useLocation } from "react-router-dom";
+import { HashRouter, Routes, Route, Link, useNavigate, useParams, useLocation, useSearchParams } from "react-router-dom";
 
 const { useState, useEffect } = React;
 
@@ -68,6 +68,29 @@ type StudyPlan = {
     topics: StudyTopic[];
 };
 
+type TestResultListItem = {
+    id: number;
+    test_name: string;
+    student_name: string;
+    score_percentage: number;
+    correct_answers: number;
+    total_questions: number;
+    completed_at: string;
+};
+
+type PaginationInfo = {
+    current_page: number;
+    total_pages: number;
+    total_results: number;
+    has_next: boolean;
+    has_previous: boolean;
+};
+
+type TestResultsResponse = {
+    results: TestResultListItem[];
+    pagination: PaginationInfo;
+};
+
 declare global {
     interface Window {
         jspdf: any;
@@ -83,6 +106,11 @@ const api = {
     if (!response.ok) throw new Error("Failed to fetch subjects");
     return response.json();
   },
+  getTestResults: async (page: number = 1): Promise<TestResultsResponse> => {
+    const response = await fetch(`${API_BASE_URL}/api/site/test-results/?page=${page}&page_size=15`);
+    if (!response.ok) throw new Error("Failed to fetch test results");
+    return response.json();
+  },
   createTest: async (subject_id: number): Promise<TestCreationResponse> => {
     const response = await fetch(`${API_BASE_URL}/api/site/create-test/`, {
       method: 'POST',
@@ -92,7 +120,7 @@ const api = {
     if (!response.ok) throw new Error("Failed to create test");
     return response.json();
   },
-  submitTest: async (test_id: number, answers: { [key: number]: string }): Promise<TestSubmissionResponse> => {
+  submitTest: async (test_id: number, student_name: string, answers: { [key: number]: string }): Promise<TestSubmissionResponse> => {
     const student_id = localStorage.getItem('student_id') || `user_${generateUUID()}`;
     localStorage.setItem('student_id', student_id);
     const response = await fetch(`${API_BASE_URL}/api/site/submit-test/`, {
@@ -101,7 +129,7 @@ const api = {
       body: JSON.stringify({
         test_id,
         student_id,
-        student_name: "Anonymous User",
+        student_name,
         answers,
       }),
     });
@@ -123,9 +151,14 @@ const Header = () => (
             <Link to="/" className="text-xl font-bold text-white hover:text-brand-accent transition-colors">
                 BilimCheck
             </Link>
-            <Link to="/tests" className="bg-brand-accent text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">
-                Testti Baslaw
-            </Link>
+            <div className="flex items-center gap-4">
+                <Link to="/results" className="text-white font-semibold py-2 px-4 rounded-lg hover:bg-brand-secondary transition-colors">
+                    Nátiyjeler
+                </Link>
+                <Link to="/tests" className="bg-brand-accent text-white font-semibold py-2 px-4 rounded-lg hover:opacity-90 transition-opacity">
+                    Testti Baslaw
+                </Link>
+            </div>
         </nav>
     </header>
 );
@@ -258,43 +291,57 @@ const TestPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { questions, subjectName } = location.state as { questions: TestQuestion[], subjectName: string } || {};
-    
 
     const [currentQIndex, setCurrentQIndex] = useState(0);
     const [answers, setAnswers] = useState<{ [key: number]: string }>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    
+    const [studentName, setStudentName] = useState('');
+    const [isNameModalOpen, setIsNameModalOpen] = useState(false);
+
     useEffect(() => {
+        const savedName = localStorage.getItem('student_name') || '';
+        setStudentName(savedName);
+
         if (!questions || questions.length === 0) {
             navigate('/tests', { replace: true });
         }
     }, [questions, navigate]);
-    
+
     if (!questions || questions.length === 0) return <LoadingSpinner />;
 
     const currentQuestion = questions[currentQIndex];
-    const progress = ((Object.keys(answers).length) / questions.length) * 100; // Progress based on answered questions
-    
+
     const handleSelectOption = (questionId: number, optionKey: string) => {
         setAnswers(prev => ({ ...prev, [questionId]: optionKey }));
         if (currentQIndex < questions.length - 1) {
-             setTimeout(() => setCurrentQIndex(i => i + 1), 300);
+            setTimeout(() => setCurrentQIndex(i => i + 1), 300);
         }
     };
-    
-    const handleSubmit = async () => {
+
+    const handleOpenSubmitModal = () => {
         if (Object.keys(answers).length !== questions.length) {
             setError("Barlıq sorawlarǵa juwap beriń.");
             return;
         }
         setError(null);
+        setIsNameModalOpen(true);
+    };
+
+    const handleFinalSubmit = async () => {
+        if (!studentName.trim()) {
+            setError("Atı-familiyańızdı kiritiń.");
+            return;
+        }
+        setError(null);
         setIsSubmitting(true);
         try {
-            const resultData = await api.submitTest(Number(testId), answers);
+            const trimmedName = studentName.trim();
+            localStorage.setItem('student_name', trimmedName);
+            const resultData = await api.submitTest(Number(testId), trimmedName, answers);
             navigate(`/result/${testId}`, { state: { resultData } });
         } catch (err) {
-            setError("An error occurred while submitting. Please try again.");
+            setError("Testti juwmaqlawda qátelik júz berdi. Qaytadan urınıp kóriń.");
             setIsSubmitting(false);
         }
     };
@@ -303,7 +350,6 @@ const TestPage = () => {
         <div className="container mx-auto px-4 py-8 max-w-2xl">
             <h1 className="text-3xl font-bold mb-4 text-center">{subjectName || 'Test'}</h1>
             
-            {/* --- START: SORAW NAVIGACIYA PANELI --- */}
             <div className="mb-6 bg-brand-primary/50 p-4 rounded-xl border border-brand-secondary">
                 <div className="flex flex-wrap justify-center gap-2">
                     {questions.map((q, index) => {
@@ -333,7 +379,6 @@ const TestPage = () => {
                     })}
                 </div>
             </div>
-            {/* --- END: SORAW NAVIGACIYA PANELI --- */}
 
             <div className="bg-brand-primary p-8 rounded-2xl shadow-2xl border border-brand-secondary">
                 <div>
@@ -354,19 +399,134 @@ const TestPage = () => {
                         Aldınǵı
                     </button>
                     {currentQIndex === questions.length - 1 ? (
-                        <button onClick={handleSubmit} disabled={isSubmitting || Object.keys(answers).length !== questions.length} className="py-2 px-6 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
-                            {isSubmitting ? 'Juwmaqlaw...' : 'Juwmaqlaw'}
+                        <button onClick={handleOpenSubmitModal} disabled={Object.keys(answers).length !== questions.length} className="py-2 px-6 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                            Juwmaqlaw
                         </button>
                     ) : (
                         <button onClick={() => setCurrentQIndex(i => Math.min(questions.length-1, i+1))} disabled={currentQIndex === questions.length-1} className="py-2 px-4 bg-brand-accent text-white rounded-lg disabled:opacity-50">Keyingi</button>
                     )}
                 </div>
-                {error && <p className="text-red-400 text-center mt-4">{error}</p>}
+                {error && !isNameModalOpen && <p className="text-red-400 text-center mt-4">{error}</p>}
             </div>
+
+            {isNameModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[100]">
+                    <div className="bg-brand-primary p-8 rounded-2xl shadow-2xl border border-brand-secondary w-full max-w-md mx-4">
+                        <h2 className="text-2xl font-bold mb-4 text-center">Nátiyjeni saqlaw</h2>
+                        
+                        <div className="mb-4">
+                            <label htmlFor="studentName" className="block text-sm font-medium text-gray-300 mb-2">Atı-familiyańız</label>
+                            <input
+                                id="studentName"
+                                type="text"
+                                value={studentName}
+                                onChange={(e) => setStudentName(e.target.value)}
+                                placeholder=""
+                                className="w-full bg-brand-secondary border border-gray-600 rounded-lg px-4 py-2 text-white focus:ring-brand-accent focus:border-brand-accent"
+                                autoFocus
+                            />
+                        </div>
+
+                        {error && <p className="text-red-400 text-center mb-4">{error}</p>}
+
+                        <div className="flex justify-end gap-4 mt-8">
+                            <button 
+                                onClick={() => { setIsNameModalOpen(false); setError(null); }} 
+                                className="py-2 px-6 bg-brand-secondary rounded-lg hover:opacity-80 transition"
+                            >
+                                Biykarlaw
+                            </button>
+                            <button 
+                                onClick={handleFinalSubmit} 
+                                disabled={isSubmitting || !studentName.trim()} 
+                                className="py-2 px-6 bg-green-500 text-white font-bold rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isSubmitting ? 'Jiberilmekte...' : 'Jiberiw hám Juwmaqlaw'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
 
+const ResultsListPage = () => {
+    const [results, setResults] = useState<TestResultListItem[]>([]);
+    const [pagination, setPagination] = useState<PaginationInfo | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    
+    const [searchParams, setSearchParams] = useSearchParams();
+    const currentPage = Number(searchParams.get('page')) || 1;
+
+    useEffect(() => {
+        setLoading(true);
+        setError(null);
+        api.getTestResults(currentPage)
+            .then(data => {
+                setResults(data.results);
+                setPagination(data.pagination);
+            })
+            .catch(() => {
+                setError("Nátiyjelerdi júklewde qátelik júz berdi. Qaytadan urınıp kóriń.");
+            })
+            .finally(() => {
+                setLoading(false);
+            });
+    }, [currentPage]);
+
+    const handlePageChange = (newPage: number) => {
+        setSearchParams({ page: newPage.toString() });
+    };
+
+    if (loading) return <LoadingSpinner />;
+    if (error) return <div className="text-center text-red-400 mt-10">{error}</div>;
+
+    return (
+        <div className="container mx-auto px-6 py-12 max-w-3xl">
+            <h2 className="text-3xl font-bold text-center mb-10">Sońǵı Nátiyjeler</h2>
+            
+            <div className="bg-brand-primary border border-brand-secondary rounded-xl overflow-hidden shadow-lg">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left min-w-[300px]">
+                        <tbody>
+                            {results.map((result) => (
+                                <tr key={result.id} className="border-t border-brand-secondary hover:bg-brand-secondary/20 transition-colors">
+                                    <td className="p-4">
+                                        <div>{result.student_name}</div>
+                                        <div className="text-gray-400 text-xs">{result.test_name}</div>
+                                    </td>
+                                    <td className="p-4 font-mono text-right">
+                                        <div>
+                                            <span className="text-brand-accent font-bold">{result.score_percentage.toFixed(1)}%</span>
+                                            <span className="text-gray-400 text-sm ml-2">({result.correct_answers}/{result.total_questions})</span>
+                                        </div>
+                                        <div className="text-gray-400 text-xs">{result.completed_at}</div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            {pagination && pagination.total_pages > 1 && (
+                <div className="flex justify-between items-center mt-8">
+                    <button onClick={() => handlePageChange(currentPage - 1)} disabled={!pagination.has_previous} className="py-2 px-4 bg-brand-secondary rounded-lg disabled:opacity-50 hover:bg-brand-secondary/70 transition">
+                        Aldınǵı
+                    </button>
+                    <span className="text-gray-400">
+                        Bet {pagination.current_page} / {pagination.total_pages}
+                    </span>
+                    <button onClick={() => handlePageChange(currentPage + 1)} disabled={!pagination.has_next} className="py-2 px-4 bg-brand-secondary rounded-lg disabled:opacity-50 hover:bg-brand-secondary/70 transition">
+                        Keyingi
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const ResultPage = () => {
     const { testId } = useParams();
@@ -509,8 +669,8 @@ Be encouraging and constructive. Return all information only in Karakalpak langu
             doc.save(`study-plan-${subject_detail.name.toLowerCase()}-g${subject_detail.grade}.pdf`);
 
         } catch (e) {
-            console.error("PDF yaratishda xatolik:", e);
-            alert("PDF faylni yaratib bo'lmadi. Iltimos, shrift fayli to'g'ri joylashganligini tekshiring.");
+            console.error("Failed to download PDF:", e);
+            setError("PDF jiberiwde qátelik júz berdi. Qaytadan urınıp kóriń.");
         }
     };
 
@@ -636,6 +796,7 @@ const App = () => {
                         <Route path="/tests" element={<SubjectSelectionPage />} />
                         <Route path="/test/:testId" element={<TestPage />} />
                         <Route path="/result/:testId" element={<ResultPage />} />
+                        <Route path="/results" element={<ResultsListPage />} />
                     </Routes>
                 </main>
                 <footer className="backdrop-blur-sm py-4">
